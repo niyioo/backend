@@ -3,8 +3,8 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/niyioo/backend/pkg/database"
@@ -13,9 +13,12 @@ import (
 )
 
 // GetUserFromContext retrieves the user from the request context.
-func GetUserFromContext(ctx context.Context) *database.User {
-	user, _ := ctx.Value(database.ContextUserKey).(*database.User)
-	return user
+func GetUserFromContext(r *http.Request) (*models.User, error) {
+	user, ok := r.Context().Value(database.ContextUserKey).(*models.User)
+	if !ok {
+		return nil, errors.New("user not found in request context")
+	}
+	return user, nil
 }
 
 // Sample code to fix undefined savedUser
@@ -58,7 +61,7 @@ func HandleUserRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Hash the user's password before saving to the database
-	hashedPassword, err := hashPassword(newUser.Password)
+	hashedPassword, err := database.HashPassword(newUser.Password)
 	if err != nil {
 		http.Error(w, "failed to hash password", http.StatusInternalServerError)
 		return
