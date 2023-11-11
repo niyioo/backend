@@ -25,7 +25,8 @@ func Connect() {
 	defer cancel()
 
 	clientOptions := options.Client().ApplyURI(DatabaseURL)
-	client, err := mongo.Connect(ctx, clientOptions)
+	var err error // Change the variable name to avoid shadowing
+	client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
