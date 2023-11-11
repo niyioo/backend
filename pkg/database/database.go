@@ -14,6 +14,8 @@ import (
 // DatabaseURL is the MongoDB URL.
 const DatabaseURL = "mongodb://localhost:27017"
 
+const ContextUserKey = "user"
+
 // DatabaseName is the name of the MongoDB database.
 const DatabaseName = "blog"
 

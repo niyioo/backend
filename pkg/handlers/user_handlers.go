@@ -3,6 +3,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -12,14 +13,9 @@ import (
 )
 
 // GetUserFromContext retrieves the user from the request context.
-func GetUserFromContext(r *http.Request) *models.User {
-	userContext := r.Context().Value(ContextUserKey)
-	if userContext != nil {
-		if user, ok := userContext.(*models.User); ok {
-			return user
-		}
-	}
-	return nil
+func GetUserFromContext(ctx context.Context) *database.User {
+	user, _ := ctx.Value(database.ContextUserKey).(*database.User)
+	return user
 }
 
 // Sample code to fix undefined savedUser
