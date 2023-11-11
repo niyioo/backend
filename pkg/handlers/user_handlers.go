@@ -1,67 +1,53 @@
+// pkg/handlers/user_handlers.go
+
 package handlers
 
 import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/niyioo/backend/pkg/database"
 	"github.com/niyioo/backend/pkg/models"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/niyioo/backend/pkg/utils"
 )
 
-// Register handles user registration
-func Register(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
-		// Handle error
+// GetUserFromContext retrieves the user from the request context.
+func GetUserFromContext(r *http.Request) *models.User {
+	userContext := r.Context().Value(ContextUserKey)
+	if userContext != nil {
+		if user, ok := userContext.(*models.User); ok {
+			return user
+		}
 	}
-
-	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		// Handle error
-	}
-
-	user.Password = string(hashedPassword)
-
-	// Save the user to the database (implement this)
-
-	// Generate JWT
-	token, err := GenerateToken(user)
-	if err != nil {
-		// Handle error
-	}
-
-	user.Token = token
-
-	// Return response with user and token
-	// (you may want to send just the token in production)
+	return nil
 }
 
-// Login handles user login
-func Login(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	err := json.NewDecoder(r.Body).Decode(&user)
+// Sample code to fix undefined savedUser
+
+// CreateAccount handles the creation of a new user account.
+func CreateAccount(w http.ResponseWriter, r *http.Request) {
+	var newUser models.User
+	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		// Handle error
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
-	// Fetch user from the database by username (implement this)
-
-	// Compare hashed password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(savedUser.Password))
+	// Hash the password before saving to the database
+	hashedPassword, err := utils.HashPassword(newUser.Password)
 	if err != nil {
-		// Handle error - invalid password
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error hashing password")
+		return
 	}
 
-	// Generate JWT
-	token, err := GenerateToken(savedUser)
+	newUser.Password = hashedPassword
+
+	// Save the user to the database
+	savedUser, err := database.SaveUser(newUser)
 	if err != nil {
-		// Handle error
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error creating user")
+		return
 	}
 
-	savedUser.Token = token
-
-	// Return response with user and token
-	// (you may want to send just the token in production)
+	utils.RespondWithJSON(w, http.StatusCreated, savedUser)
 }

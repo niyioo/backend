@@ -1,47 +1,32 @@
+// pkg/database/database.go
+
 package database
 
 import (
 	"context"
 	"log"
+	"time"
 
-	"github.com/niyioo/backend/pkg/models"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// SavePost saves a blog post to the database
-func SavePost(post models.Post) error {
-	collection := client.Database("your_database_name").Collection("posts")
+// DatabaseURL is the MongoDB URL.
+const DatabaseURL = "mongodb://localhost:27017"
 
-	_, err := collection.InsertOne(context.TODO(), post)
+// DatabaseName is the name of the MongoDB database.
+const DatabaseName = "blog"
+
+var client *mongo.Client
+
+// Connect initializes the MongoDB connection.
+func Connect() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	clientOptions := options.Client().ApplyURI(DatabaseURL)
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
-		return err
 	}
-
-	return nil
-}
-
-// GetPosts retrieves all blog posts from the database
-func GetPosts() ([]models.Post, error) {
-	var posts []models.Post
-	collection := client.Database("your_database_name").Collection("posts")
-
-	cursor, err := collection.Find(context.TODO(), bson.M{})
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	defer cursor.Close(context.TODO())
-
-	for cursor.Next(context.TODO()) {
-		var post models.Post
-		if err := cursor.Decode(&post); err != nil {
-			log.Fatal(err)
-			return nil, err
-		}
-		posts = append(posts, post)
-	}
-
-	return posts, nil
 }
