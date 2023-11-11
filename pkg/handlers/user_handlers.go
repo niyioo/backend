@@ -47,3 +47,33 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 	utils.RespondWithJSON(w, http.StatusCreated, savedUser)
 }
+
+// HandleUserRegistration handles user registration.
+func HandleUserRegistration(w http.ResponseWriter, r *http.Request) {
+	// Parse the request body to get user registration details
+	var newUser models.User
+	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
+		http.Error(w, "failed to decode request body", http.StatusBadRequest)
+		return
+	}
+
+	// Hash the user's password before saving to the database
+	hashedPassword, err := hashPassword(newUser.Password)
+	if err != nil {
+		http.Error(w, "failed to hash password", http.StatusInternalServerError)
+		return
+	}
+
+	// Assign the hashed password to the user
+	newUser.Password = hashedPassword
+
+	// Save the user to the database
+	if err := database.SaveUser(&newUser); err != nil {
+		http.Error(w, "failed to save user to database", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with a success message
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("User registered successfully"))
+}
